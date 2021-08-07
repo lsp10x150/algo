@@ -1,0 +1,9 @@
+cmake_minimum_required(VERSION 3.19)
+project(algo)
+set(CMAKE_CXX_STANDARD 20)
+
+add_subdirectory(sort)
+add_subdirectory(union_find)
+add_subdirectory(graph)
+add_subdirectory(symbol_tables)
+add_executable(algo main.cpp sort/sort.h union_find/union_find.h graph/graph.h graph/graph.cpp)
