@@ -1,10 +1,9 @@
+#ifndef ALGO_UNION_FIND_H
+#define ALGO_UNION_FIND_H
 #include <memory>
 #include <iostream>
 #include <numeric>
 #include <algorithm>
-
-#ifndef ALGO_UNION_FIND_H
-#define ALGO_UNION_FIND_H
 
 struct QuickFind {
 private:
@@ -98,6 +97,14 @@ private:
     std::unique_ptr<int[]>  sz  {nullptr};
     size_t                  N   {0};
 public:
+    explicit WeightedQuickUnion(int capacity)
+        : N(capacity)
+        , sz(std::make_unique<int[]>(N))
+        , id(std::make_unique<int[]>(N))
+    {
+        std::iota(id.get(), id.get() + N, 0);
+        std::fill(sz.get(), sz.get() + N, 1);
+    }
     explicit WeightedQuickUnion(std::istream& is) {
         int i = 0, j = 0, p = 0, q = 0;
         std::cin >> N;
@@ -121,7 +128,6 @@ public:
     size_t components() const noexcept {
         return N;
     }
-private:
     [[nodiscard]]
     int find(int p) const {
         while (p != id[p])

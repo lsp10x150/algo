@@ -8,8 +8,47 @@
 #include <limits>
 #include <sstream>
 #include <memory>
+#include "../data_structures/priority_queue.h"
+
 namespace graph {
-    /** ********************************************************
+    struct Edge {
+    private:
+        int v_, w_;
+        double weight_;
+    public:
+        Edge() : v_(0), w_(0), weight_(0)
+        {}
+
+        explicit Edge(double weight);
+        Edge(int v, int w, double weight);
+        [[nodiscard]]
+        double weight() const noexcept;
+        [[nodiscard]]
+        int either() const noexcept;
+        [[nodiscard]]
+        int other(int v) const;
+        bool operator<(const Edge& other) const;
+        friend std::ostream& operator<<(std::ostream& os, const Edge& e);
+    };
+}
+
+template<>
+struct data_structures::CompPolicy<graph::Edge, false>{
+    static inline const graph::Edge reverse_extremum = graph::Edge(0,0,std::numeric_limits<double>::lowest());
+    bool comp(const graph::Edge& lhs, const graph::Edge& rhs) const {
+        return lhs < rhs;
+    }
+};
+template<>
+struct data_structures::CompPolicy<graph::Edge, true>{
+    static inline const graph::Edge reverse_extremum = graph::Edge(0,0,std::numeric_limits<double>::max());
+    bool comp(const graph::Edge& lhs, const graph::Edge& rhs) const {
+        return rhs < lhs;
+    }
+};
+
+namespace graph {
+    /** Undirected graphs ********************************************************
      */
     class Graph {
     public:
@@ -134,7 +173,7 @@ namespace graph {
         void dfs(const Graph& g, int v);
     };
 
-    /** ********************************************************
+    /** Directed graphs ********************************************************
     */
     class Digraph {
         int v_;
@@ -245,5 +284,80 @@ namespace graph {
         [[nodiscard]]
         bool reachable(int v, int w) const noexcept;
     };
+    /** Minimum spanning trees ********************************************************
+    */
+
+
+    class EdgeWeightedGraph {
+    private:
+        int V_, E_;
+        std::vector<std::vector<Edge>> adj_;
+
+    public:
+        explicit EdgeWeightedGraph(int v);
+        explicit EdgeWeightedGraph(std::istream& is);
+        [[nodiscard]]
+        int V() const noexcept;
+        [[nodiscard]]
+        int E() const noexcept;
+        void addEdge(Edge e);
+        [[nodiscard]]
+        const std::vector<Edge>& adj(int v) const;
+        [[nodiscard]]
+        std::vector<Edge> edges();
+        friend std::ostream& operator<<(std::ostream& os, const EdgeWeightedGraph& ewg);
+    };
+
+    class LazyPrimMST {
+    private:
+        std::vector<bool> marked_;
+        std::queue<Edge> mst_;
+        data_structures::MinPriorityQueue<Edge> pq_;
+    public:
+        explicit LazyPrimMST(EdgeWeightedGraph& g);
+        double weight() const noexcept;
+        const std::queue<Edge>& edges() const;
+
+    private:
+        void visit(EdgeWeightedGraph& g, int v);
+    };
+
+    //! @todo don't forget to implement the IndexMinPriorityQueue
+//    class PrimMST {
+//        std::vector<Edge> edgeTo_;
+//        std::vector<double> distTo_;
+//        std::vector<bool> marked_;
+//        data_structures::MinPriorityQueue<Double> pq_;
+//    public:
+//        explicit PrimMST(EdgeWeightedGraph& g);
+//        std::vector<Edge>& edges() const;
+//        double weight() const noexcept;
+//    private:
+//        void visit(EdgeWeightedGraph g, int v);
+//    };
+    class KruskalMST {
+    private:
+        std::queue<Edge> mst_;
+    public:
+        explicit KruskalMST(EdgeWeightedGraph& g);
+        const std::queue<Edge>& edges() const;
+        double weight() const noexcept;
+    };
+
+    /** Shortest paths ********************************************************
+    */
+    struct DirectedEdge {
+    private:
+        int v_, w_;
+        double weight_;
+    public:
+        DirectedEdge();
+        DirectedEdge(int v, int w, double weight);
+        double weight() const;
+        int from() const;
+        int to() const;
+        friend std::ostream& operator<<(std::ostream& os, const DirectedEdge& de);
+    };
 }
+
 #endif //ALGO_GRAPH_H

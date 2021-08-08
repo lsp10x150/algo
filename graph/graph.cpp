@@ -1,4 +1,6 @@
 #include "graph.h"
+#include <iomanip>
+#include "../union_find/union_find.h"
 
 namespace graph {
     bool DepthFirstPaths::hasPathTo(int v) const {
@@ -434,5 +436,156 @@ namespace graph {
 
     bool TransitiveClosure::reachable(int v, int w) const noexcept {
         return all_[v]->marked(w);
+    }
+
+    std::vector<Edge> EdgeWeightedGraph::edges() {
+        std::vector<Edge> ve;
+        for (int v = 0; v < V(); ++v)
+            for (auto& e : adj_.at(v))
+                if (e.other(v) > v)
+                    ve.push_back(e);
+        return ve;
+    }
+
+    EdgeWeightedGraph::EdgeWeightedGraph(int v)
+        : V_(v)
+        , E_(0)
+        , adj_(v, std::vector<Edge>())
+    {}
+
+    EdgeWeightedGraph::EdgeWeightedGraph(std::istream &is) {
+        //! @todo IMPLEMENT!
+    }
+
+    int EdgeWeightedGraph::V() const noexcept {
+        return V_;
+    }
+
+    int EdgeWeightedGraph::E() const noexcept {
+        return E_;
+    }
+
+    const std::vector<Edge>& EdgeWeightedGraph::adj(int v) const {
+        return adj_.at(v);
+    }
+
+    void EdgeWeightedGraph::addEdge(Edge e) {
+        const int v = e.either(), w = e.other(v);
+        adj_[v].push_back(e);
+        adj_[w].push_back(e);
+        ++E_;
+    }
+
+    Edge::Edge(int v, int w, double weight)
+        : v_(v)
+        , w_(w)
+        , weight_(weight)
+    {}
+
+    double Edge::weight() const noexcept {
+        return weight_;
+    }
+
+    int Edge::either() const noexcept {
+        return v_;
+    }
+
+    int Edge::other(int v) const {
+        if (v == v_) return w_;
+        else if (v == w_) return v_;
+        else throw std::runtime_error("Inconsistent edge");
+    }
+
+    std::ostream &operator<<(std::ostream &os, const Edge &e) {
+        return os << e.v_ << '-' << e.w_
+                  << ' ' << std::setprecision(2) << e.weight_;
+    }
+
+    bool Edge::operator<(const Edge &other) const {
+        return this->weight_ < other.weight_;
+    }
+
+    Edge::Edge(double weight)
+        : w_(0), v_(0), weight_(weight)
+    {}
+
+    bool operator==(const Edge& lhs, const Edge& rhs) {
+        return !(lhs < rhs) && !(rhs < lhs);
+    }
+    bool operator!=(const Edge& lhs, const Edge& rhs) {
+        return !(lhs == rhs);
+    }
+    bool operator>(const Edge& lhs, const Edge& rhs) {
+        return rhs < lhs && lhs != rhs;
+    }
+    bool operator>=(const Edge& lhs, const Edge& rhs) {
+        return rhs < lhs || lhs == rhs;
+    }
+    bool operator<=(const Edge& lhs, const Edge& rhs) {
+        return lhs < rhs || lhs == rhs;
+    }
+
+    LazyPrimMST::LazyPrimMST(EdgeWeightedGraph &g)
+        : pq_(g.V())
+        , marked_(g.V())
+        , mst_{}
+    {
+        visit(g, 0);
+        while (!pq_.empty()) {
+            Edge e = pq_.pop();
+            int v = e.either(), w = e.other(v);
+            if (marked_.at(v) && marked_.at(w)) continue;
+            mst_.push(e);
+            if (!marked_.at(v)) visit(g, v);
+            if (!marked_.at(w)) visit(g, w);
+        }
+    }
+
+    double LazyPrimMST::weight() const noexcept {
+        return 0; //! @todo IMPLEMENT
+    }
+
+    const std::queue<Edge> &LazyPrimMST::edges() const {
+        return mst_;
+    }
+
+    void LazyPrimMST::visit(EdgeWeightedGraph &g, int v) {
+        marked_[v] = true;
+        for (const auto& el : g.adj(v))
+            if (!marked_[el.other(v)])
+                pq_.insert(el);
+    }
+
+//    PrimMST::PrimMST(EdgeWeightedGraph& g)
+//        : edgeTo_(g.V())
+//        , distTo_(g.V())
+//        , marked_(g.V(), false)
+//        , pq_(g.V())
+//    {
+//        for (int v = 0; v < g.V(); ++v)
+//            distTo_[v] = std::numeric_limits<double>::infinity();
+//        distTo_[0] = 0.0;
+//        pq_.insert({0, 0.0});
+//    }
+    KruskalMST::KruskalMST(EdgeWeightedGraph &g)
+        : mst_{}
+    {
+        data_structures::MinPriorityQueue<Edge> pq(g.E());
+        for (const auto& e : g.edges()) pq.insert(e);
+        WeightedQuickUnion uf(g.V());
+        while (!pq.empty() && mst_.size() < g.V()-1) {
+            Edge e = pq.pop();
+            int v = e.either(), w = e.other(v);
+            if (uf.connected(v, w)) continue;
+            uf.Union(v, w);
+            mst_.push(e);
+        }
+    }
+
+    const std::queue<Edge> &KruskalMST::edges() const {
+        return mst_;
+    }
+    double KruskalMST::weight() const noexcept {
+        return 1.0;
     }
 }

@@ -1,12 +1,5 @@
-//
-// Created by lsp10 on 8/7/21.
-//
-
 #ifndef GRAPH_SORTS_H
 #define GRAPH_SORTS_H
-//
-// Created by lsp10 on 8/7/21.
-//
 #include <iostream>
 #include <memory>
 #include <functional>
